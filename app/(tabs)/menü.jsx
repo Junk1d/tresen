@@ -1,8 +1,10 @@
+import { Platform, TouchableOpacity } from "react-native";
+import React, { useEffect, useState } from "react";
 import {
+    Text,
     Box,
     Button,
     ButtonText,
-    CloseIcon,
     HStack,
     Heading,
     Icon,
@@ -14,47 +16,28 @@ import {
     ModalCloseButton,
     ModalContent,
     ModalHeader,
-    ScrollView,
-    SearchIcon,
-    Text,
     VStack,
 } from "@gluestack-ui/themed";
 import { useSQLiteContext } from "expo-sqlite/next";
-
-import { router, useNavigation } from "expo-router";
 import { useTheme } from "@react-navigation/native";
-import { useEffect, useState } from "react";
-import {
-    Platform,
-    SafeAreaView,
-    StatusBar,
-    TouchableOpacity,
-} from "react-native";
-import {
-    DoorClosedIcon,
-    PlusCircle,
-    PlusIcon,
-    XIcon,
-} from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { FlatGrid } from "react-native-super-grid";
+import { PlusCircle, XIcon } from "lucide-react-native";
 
-export default function Home() {
-    const theme = useTheme();
-    const [isLoading, setIsLoading] = useState(true);
-    const [zettel, setZettel] = useState([]);
-    const [isAdding, setIsAdding] = useState(false);
-    const [search, setSearch] = useState("");
-    const [isError, setIsError] = useState(false);
+export default function Menü() {
     const db = useSQLiteContext();
-    async function loadZettel() {
+    const [isLoading, setIsLoading] = useState(true);
+    const [isError, setIsError] = useState(false);
+    const theme = useTheme();
+    const [menu, setMenu] = useState([]);
+    const [isAdding, setIsAdding] = useState(false);
+
+    async function loadMenü() {
         try {
-            const result = await db.getAllAsync(
-                `SELECT * FROM zettel WHERE vorname || ' ' || nachname LIKE ?`,
-                ["%" + search + "%"]
-            );
+            const result = await db.getAllAsync(`SELECT * FROM zutat`);
 
             // console.log(result);
-            setZettel(result);
+            setMenu(result);
         } catch (error) {
             console.log(error);
             setIsError(true);
@@ -63,10 +46,10 @@ export default function Home() {
         }
     }
     useEffect(() => {
-        loadZettel();
+        loadMenü();
 
         return () => {};
-    }, [search]);
+    }, []);
 
     if (isLoading) {
         return (
@@ -80,7 +63,7 @@ export default function Home() {
             <SafeAreaView
                 style={{
                     flex: 1,
-                    // paddingTop: Platform.OS === "android" ? 35 : 0,
+                    paddingTop: Platform.OS === "android" ? 35 : 0,
                 }}
             >
                 <HStack
@@ -90,7 +73,7 @@ export default function Home() {
                     gap={"$5"}
                     mx={"$10"}
                 >
-                    <Input
+                    {/* <Input
                         flexGrow={1}
                         variant="rounded"
                         size="lg"
@@ -110,7 +93,7 @@ export default function Home() {
                             onChangeText={(text) => setSearch(text)}
                             // onChange={async (e) => {}}
                         />
-                    </Input>
+                    </Input> */}
                     <TouchableOpacity
                         onPress={(e) => {
                             setIsAdding(true);
@@ -122,48 +105,55 @@ export default function Home() {
 
                 <Box px={"$8"}>
                     <FlatGrid
-                        data={zettel}
+                        data={menu}
                         itemDimension={300}
                         renderItem={({ item }) => (
                             <TouchableOpacity
-                                onPress={(e) =>
-                                    router.navigate(`./zettel/${item.id}`)
-                                }
+                                onPress={(e) => {
+                                    // router.navigate(`./menu/${item.id}`);
+                                }}
                             >
                                 <Box
                                     borderRadius={"$3xl"}
                                     backgroundColor={theme.colors.border}
                                     p={"$11"}
                                 >
-                                    <Text
-                                        color={theme.colors.text}
-                                        numberOfLines={1}
-                                    >
-                                        {`${item.vorname} ${item.nachname}`}
-                                    </Text>
+                                    <HStack justifyContent="space-between">
+                                        <Text
+                                            color={theme.colors.text}
+                                            numberOfLines={1}
+                                        >
+                                            {`${item.name}`}
+                                        </Text>
+                                        <Text
+                                            color={theme.colors.text}
+                                            numberOfLines={1}
+                                        >
+                                            {`${item.preis} €`}
+                                        </Text>
+                                    </HStack>
                                 </Box>
                             </TouchableOpacity>
                         )}
                     />
                 </Box>
 
-                <AddZettelModal
-                    loadZettel={loadZettel}
+                <AddMenüModal
+                    loadMenü={loadMenü}
                     isOpen={isAdding}
                     setIsAdding={setIsAdding}
-                ></AddZettelModal>
+                ></AddMenüModal>
             </SafeAreaView>
         </Box>
     );
 }
 
-function AddZettelModal({ loadZettel, isOpen, setIsAdding }) {
+function AddMenüModal({ loadMenü, isOpen, setIsAdding }) {
     const theme = useTheme();
-    const [vorname, setVorname] = useState("");
-    const [nachname, setNachname] = useState("");
+    const [name, setName] = useState("");
+    const [preis, setPreis] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const db = useSQLiteContext();
-    const navigation = useNavigation();
 
     return (
         <Modal size="lg" isOpen={isOpen}>
@@ -171,7 +161,7 @@ function AddZettelModal({ loadZettel, isOpen, setIsAdding }) {
             <ModalContent backgroundColor={theme.colors.card}>
                 <ModalHeader>
                     <Heading color={theme.colors.text} size="lg">
-                        Neuer Zettel
+                        Neue Zutat
                     </Heading>
                     <ModalCloseButton onPress={(e) => setIsAdding(false)}>
                         {/* <CloseIcon
@@ -197,9 +187,9 @@ function AddZettelModal({ loadZettel, isOpen, setIsAdding }) {
                         >
                             <InputField
                                 color={theme.colors.text}
-                                placeholder="Vorname"
+                                placeholder="Name"
                                 onChangeText={(newText) => {
-                                    setVorname(newText);
+                                    setName(newText);
                                 }}
                             />
                         </Input>
@@ -213,10 +203,11 @@ function AddZettelModal({ loadZettel, isOpen, setIsAdding }) {
                             alignItems="center"
                         >
                             <InputField
+                                inputMode="numeric"
                                 color={theme.colors.text}
-                                placeholder="Nachname"
+                                placeholder="Preis"
                                 onChangeText={(newText) => {
-                                    setNachname(newText);
+                                    setPreis(newText);
                                 }}
                             />
                         </Input>
@@ -230,15 +221,16 @@ function AddZettelModal({ loadZettel, isOpen, setIsAdding }) {
                                 onPress={async (e) => {
                                     try {
                                         setIsLoading(true);
-                                        if (!vorname || !nachname) return;
+                                        let numPreis = Number.parseFloat(
+                                            preis.replace(",", ".")
+                                        );
+                                        console.log(numPreis);
                                         let result = await db.runAsync(
-                                            "Insert INTO zettel (vorname, nachname) VALUES (?, ?)",
-                                            [vorname, nachname]
+                                            "Insert INTO zutat (name, preis) VALUES (?, ?)",
+                                            [name, numPreis]
                                         );
-                                        router.navigate(
-                                            `./zettel/${result.lastInsertRowId}`
-                                        );
-                                        loadZettel();
+                                        console.log(result.lastInsertRowId);
+                                        loadMenü();
                                         setIsAdding(false);
                                     } catch (error) {
                                         console.log(error);

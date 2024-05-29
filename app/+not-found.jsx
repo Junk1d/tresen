@@ -9,7 +9,7 @@ export default function NotFoundScreen() {
             <Center flex={1}>
                 <Text color="$textDark200">This screen doesn't exist.</Text>
 
-                <Link href="/" style={{ marginTop: 10 }}>
+                <Link href="/zettel" style={{ marginTop: 10 }}>
                     <Text color="$primary500">Go to home screen!</Text>
                 </Link>
             </Center>
